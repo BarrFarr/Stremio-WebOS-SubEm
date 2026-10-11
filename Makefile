@@ -51,6 +51,7 @@ build: service/server.js service/bin/ffmpeg service/bin/ffprobe
 check-frontend:
 	@node scripts/verify-build.js --frontend-only
 	@node scripts/test-subem-toggles.js
+	@node scripts/test-subem-subtitle-choice.js
 
 package: build
 	@rm -f "$(IPK)"

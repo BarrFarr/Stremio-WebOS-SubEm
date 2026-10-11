@@ -116,3 +116,33 @@
                                      prefIdx = ai; break;
                                  }
                              }
+--- player.chunk.js
++++ player.chunk.js
+@@ -1391,7 +1391,26 @@
+                         } = T.state(), l = (e, t) => e.find((({
+                             lang: e
+                         }) => b.eo.matches(e, t)));
+-                        if (!be())
++                        const __subEmPref = (() => { try { return localStorage.getItem("stremio_subem_preferEmbeddedSubtitles") === "true"; } catch (__e) { return !1; } })(),
++                            __subEmKey = (__s => __s ? String(__s.url || __s.infoHash || JSON.stringify(__s)) : "")(He()),
++                            __subEmActive = __subEmPref && !!e && !be() && C.__subEmFor !== __subEmKey;
++                        if (__subEmActive) {
++                            const __subEmEmb = l($e(), e),
++                                __subEmExt = l(_e(), e),
++                                __subEmProbed = $e().length > 0 || C.__subEmWaitOver === __subEmKey;
++                            if (__subEmEmb) C.__subEmFor = __subEmKey, C.selectSubtitlesTrack(__subEmEmb), me(!0);
++                            else if (__subEmProbed && __subEmExt) C.__subEmFor = __subEmKey, C.selectExtraSubtitlesTrack(__subEmExt), me(!0);
++                            else if (C.__subEmTimerFor !== __subEmKey) {
++                                C.__subEmTimerFor = __subEmKey, clearTimeout(C.__subEmTimer), C.__subEmTimer = setTimeout((() => {
++                                    const __k = (__s => __s ? String(__s.url || __s.infoHash || JSON.stringify(__s)) : "")(He());
++                                    if (__k !== __subEmKey || C.__subEmFor === __subEmKey || be()) return;
++                                    C.__subEmWaitOver = __subEmKey;
++                                    const __emb2 = l($e(), e), __ext2 = l(_e(), e);
++                                    __emb2 ? (C.__subEmFor = __subEmKey, C.selectSubtitlesTrack(__emb2), me(!0)) : __ext2 && (C.__subEmFor = __subEmKey, C.selectExtraSubtitlesTrack(__ext2), me(!0))
++                                }), 6e3)
++                            }
++                        }
++                        if (!be() && !__subEmActive)
+                             if (fe()) {
+                                 if (e) {
+                                     const t = l($e(), e),

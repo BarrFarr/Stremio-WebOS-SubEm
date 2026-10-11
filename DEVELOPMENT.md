@@ -69,6 +69,15 @@ The settings screen re-renders the switches through a module-scope Solid signal 
 
 #### subtitleLanguage + preferEmbeddedSubtitles — embedded subtitle auto-select
 
+On the TV the choice is made in `player.chunk.js` (the Stremio player screen, which drives the `WebOsVideo` implementation). When the **Prefer Embedded Subtitles** switch is ON and a default subtitle language is set in Settings, the player picks:
+
+1. an embedded track in that language, if the file has one;
+2. otherwise an addon track in that language (for example from OpenSubtitles).
+
+Embedded tracks are reported by an asynchronous media probe, so an addon track is only taken once the probe has reported the file's tracks, or after a 6-second wait when the file has no embedded subtitles at all. The choice is made once per video; a track picked manually afterwards is not overridden. With the switch OFF the stock Stremio logic is unchanged. `scripts/test-subem-subtitle-choice.js` checks this on the built file.
+
+The `HTMLVideo` fallback player (`video.chunk.js`) applies the same preference directly to the element's text tracks:
+
 When the **Prefer Embedded Subtitles** switch is ON and `profile.settings.subtitlesLanguage` is set, the `onloadedmetadata` handler scans `d.textTracks` for a track whose `kind` is `subtitles` or `captions` and whose language matches. Only when a match exists is it set to `mode="showing"` and the other subtitle/caption tracks disabled; tracks of other kinds (chapters, metadata) are untouched. If there is no match, no track is changed and Stremio's external-subtitle logic remains in charge.
 
 Language codes are normalised: 2-letter ISO 639-1 codes (e.g. `pl`, `en`) and region forms (e.g. `en-US`) are mapped to 3-letter ISO 639-2/T codes (`pol`, `eng`) before comparison so a track labelled `pol` matches a setting of `pl`.
