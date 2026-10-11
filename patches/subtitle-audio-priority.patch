@@ -1,0 +1,57 @@
+--- video.chunk.js
++++ video.chunk.js
+@@ -18369,6 +18369,8 @@
+                     S("buffering"), S("buffered")
+                 }, d.onloadedmetadata = function() {
+-                    if (d.audioTracks && d.audioTracks.length > 0) {
++                    var __prefAudioOverDef = false;
++                    try { __prefAudioOverDef = !!JSON.parse(localStorage.getItem("profile")).settings.preferAudioOverDefault; } catch(__e) {}
++                    if (__prefAudioOverDef && d.audioTracks && d.audioTracks.length > 0) {
+                         var __prefLang = null;
+                         try { __prefLang = JSON.parse(localStorage.getItem("profile")).settings.audioLanguage; } catch(__e) {}
+                         if (!__prefLang) {
+@@ -18401,6 +18403,30 @@
+                         S("audioTracks");
+                         S("selectedAudioTrackId");
+                     }
++                    try {
++                        var __subLang = null, __prefEmb = false;
++                        try {
++                            var __subProf = JSON.parse(localStorage.getItem("profile")).settings;
++                            __subLang = __subProf.subtitleLanguage || null;
++                            __prefEmb = !!__subProf.preferEmbeddedSubtitles;
++                        } catch(__e) {}
++                        if (__prefEmb && __subLang && d.textTracks && d.textTracks.length > 0) {
++                            var __sMap = { en:"eng", es:"spa", fr:"fra", de:"deu", it:"ita", pt:"por", ru:"rus", nl:"nld", pl:"pol", ja:"jpn", ko:"kor", zh:"zho", hi:"hin", tr:"tur", ar:"ara", sv:"swe", no:"nor", da:"dan", fi:"fin", el:"ell", cs:"ces", hu:"hun", ro:"ron", he:"heb", uk:"ukr", vi:"vie" };
++                            var __sBToT = { fre:"fra", ger:"deu", dut:"nld", chi:"zho", gre:"ell", cze:"ces" };
++                            var __normS = function(l) { if (!l) return ""; l = String(l).toLowerCase().trim(); if (l.length === 2 && __sMap[l]) return __sMap[l]; l = l.slice(0,3); return __sBToT[l] || l; };
++                            var __matched = false;
++                            for (var __si = 0; __si < d.textTracks.length; __si++) {
++                                var __tt = d.textTracks[__si];
++                                var __tk = (__tt.kind || "").toLowerCase();
++                                if (__tk === "subtitles" || __tk === "captions") {
++                                    if (!__matched && __normS(__tt.language) === __normS(__subLang)) {
++                                        __tt.mode = "showing";
++                                        __matched = true;
++                                    } else {
++                                        __tt.mode = "disabled";
++                                    }
++                                }
++                            }
++                        }
++                    } catch(__ste) {}
+                     S("loaded")
+                 }, d.onloadeddata = function() {
+                     S("buffering"), S("buffered")
+@@ -20706,9 +20732,11 @@
+                         // Auto-select preferred audio language from Stremio settings
+                         var prefLang = null;
+                         try { prefLang = JSON.parse(localStorage.getItem("profile")).settings.audioLanguage; } catch(e) {}
++                        var prefAudioOverDef = false;
++                        try { prefAudioOverDef = !!JSON.parse(localStorage.getItem("profile")).settings.preferAudioOverDefault; } catch(e) {}
+                         var prefIdx = -1;
+-                        if (prefLang) {
++                        if (prefAudioOverDef && prefLang) {
+                             for (var ai = 0; ai < A.audioTracks.length; ai++) {
+                                 var tl = A.audioTracks[ai].language || "";
+                                 if (tl === prefLang || tl.substring(0,2) === prefLang.substring(0,2)) {
