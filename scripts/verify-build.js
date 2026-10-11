@@ -33,6 +33,7 @@ if (!frontendOnly) {
 const dir = path.join(root, "service", "www");
 const settings = fs.readFileSync(path.join(dir, "settings.chunk.js"), "utf8");
 const video = fs.readFileSync(path.join(dir, "video.chunk.js"), "utf8");
+const frontendService = fs.readFileSync(path.join(root, "frontend-webos", "service.js"), "utf8");
 
 for (const [source, text] of [
   [settings, "Prefer Embedded Subtitles"],
@@ -52,4 +53,6 @@ for (const [source, text] of [
 assert(!settings.includes("stremio_prefer_embedded_subs") && !video.includes("stremio_prefer_embedded_subs"), "Legacy subtitle flag remains");
 assert(!settings.includes("stremio_prefer_audio_over_default") && !video.includes("stremio_prefer_audio_over_default"), "Legacy audio flag remains");
 assert(video.includes("Media probe error, falling back to direct playback"), "Direct-play fallback for failed capability probes is missing");
+assert(frontendService.includes(`luna://${serviceId}/`), "Frontend still does not target the isolated SubEm service");
+assert(!frontendService.includes("luna://io.strem.webos.server/"), "Original Stremio service endpoint remains in the frontend");
 console.log("Frontend verification passed.");

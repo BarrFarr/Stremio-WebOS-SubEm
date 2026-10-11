@@ -548,7 +548,7 @@
                                 console.error(`Failed to launch service ${t}`, r)
                             };
                         if (globalThis.webOS) {
-                            const t = "luna://io.strem.webos.server/";
+                            const t = "luna://org.barrfarr.stremio.subem.server/";
                             globalThis.webOS.service.request(t, {
                                 method: "start",
                                 parameters: {},
