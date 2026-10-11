@@ -9,6 +9,17 @@ This project is maintained specifically for LG webOS and focuses on performance,
 
 Built on Stremio Theater and stripped of unnecessary non-webOS platform code for a cleaner, faster, and more streamlined LG webOS experience.
 
+## Origin and credits
+
+**Stremio SubEm** is an unofficial fork of [spcljense/stremio-webos](https://github.com/spcljense/stremio-webos) by Kieran Brown (spcljense). That project is an LG webOS build of the Stremio Theater frontend. This fork keeps the upstream code and adds:
+
+- **Prefer Embedded Subtitles**: the subtitle track built into the video file, in the language chosen in Settings, is used first. Addon subtitles (for example OpenSubtitles) are used only when the file has no such track.
+- **Prefer Audio Over Default**: the audio track in your chosen language is used instead of the track the file marks as default.
+- A separate app ID (`org.barrfarr.stremio.subem`), so it installs alongside the official Stremio app and the upstream build.
+
+This project is not affiliated with or endorsed by Stremio. "Stremio" is a trademark of its respective owner. The streaming server (`server.js`) is downloaded from Stremio's official distribution at build time and is not part of this repository.
+
+**License:** the upstream repository does not publish a license. This fork therefore does not add one, and the upstream code remains under its authors' rights. The fork's own additions (`patches/subtitle-audio-priority.patch` and the `scripts/test-subem-*.js` tests) are offered to upstream and may be reused by it.
 Features
 
 * Multi-profile support for users with an active Stremio Supporter subscription
@@ -22,7 +33,7 @@ Features
 * Faster startup and responsive TV navigation
 * Native LG webOS media player integration
 * Configurable preferred audio language selection
-* Optional embedded subtitle language preference
+* Optional "Prefer Embedded Subtitles": built-in subtitle track in your language first, addon (OpenSubtitles) subtitles only as a fallback
 * Improved handling of multiple audio tracks
 * Official Stremio streaming server integration
 * Optimized specifically for LG webOS TVs
@@ -62,6 +73,34 @@ This build uses its own application ID and can therefore be installed alongside 
 
 This makes it possible to use or test this build without replacing the official Stremio installation.
 
+# What this fork changes: embedded subtitles first
+
+## The problem
+
+With an OpenSubtitles addon installed, the stock player kept taking subtitles from the addon instead of the subtitle track built into the video file (MKV/MP4). Often it selected nothing at all and the subtitle menu showed **None**, even when the file had a track in the language chosen under Settings → Subtitles → Default Language.
+
+Built-in tracks are usually better: they are timed for the exact release and need no download. Addon subtitles are a good fallback, but they should not replace a matching built-in track.
+
+## Why it happened
+
+- The player screen picks the default subtitle track, not the low-level webOS video player. In the stock Theater code, the **Default Language** branch only runs after a *secondary* subtitle language has been applied. With a single language configured, no track was picked, so the result was **None**, or the addon track from an earlier per-video choice.
+- Built-in tracks are reported by an asynchronous media probe, often after the addon results have already arrived. Anything that picks "the first matching track" tends to take the addon track.
+- stremio-core keeps only its own known settings fields. An extra key saved through `updateSettings` is dropped silently, so a new option cannot be stored in `profile.settings`.
+
+## What was added
+
+Two switches in **Settings → Playback**. Both are OFF by default and the app keeps stock behaviour while they are OFF.
+
+- **Prefer Embedded Subtitles.** The player uses the subtitle **Default Language** from Settings and picks, in this order:
+  1. the built-in (embedded) track in that language, if the file has one;
+  2. otherwise the addon track (for example OpenSubtitles) in that language.
+
+  Before falling back to an addon track, the player waits until the file's built-in tracks are known, up to 6 seconds when the file has none. The choice is made once per video, so a track you pick manually during playback is not overridden.
+- **Prefer Audio Over Default.** The player switches to the audio track in the audio **Default Language** instead of the track the file marks as default. Commentary and audio-description tracks are skipped. If no matching track exists, the file's default is kept.
+
+The switch values are stored in `localStorage` (`stremio_subem_preferEmbeddedSubtitles`, `stremio_subem_preferAudioOverDefault`) rather than in `profile.settings`, because stremio-core drops unknown settings keys. Settings and the player read the same keys.
+
+All changes live in `patches/subtitle-audio-priority.patch`, which the build applies to the `frontend-webos/` snapshot. `make check-frontend` runs `scripts/test-subem-toggles.js` and `scripts/test-subem-subtitle-choice.js` against the built files. They check that the switches toggle and persist, and that subtitles are chosen as embedded first, addon second. See `DEVELOPMENT.md` for the technical details.
 # Installation
 
 ## Homebrew Channel
