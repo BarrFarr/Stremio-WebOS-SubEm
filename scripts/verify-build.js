@@ -58,6 +58,8 @@ for (const [source, text] of [
 assert(!settings.includes("stremio_prefer_embedded_subs") && !video.includes("stremio_prefer_embedded_subs"), "Legacy subtitle flag remains");
 assert(!settings.includes("stremio_prefer_audio_over_default") && !video.includes("stremio_prefer_audio_over_default"), "Legacy audio flag remains");
 assert(video.includes("Media probe error, falling back to direct playback"), "Direct-play fallback for failed capability probes is missing");
+assert(settings.includes('label: "Prefer Embedded Subtitles",\n                            options: [{\n                                label: "Prefer Embedded Subtitles",'), "Embedded subtitle toggle is not nested in a menu option");
+assert(settings.includes('label: "Prefer Audio Over Default",\n                            options: [{\n                                label: "Prefer Audio Over Default",'), "Audio preference toggle is not nested in a menu option");
 assert(frontendService.includes(`luna://${serviceId}/`), "Frontend still does not target the isolated SubEm service");
 assert(!frontendService.includes("luna://io.strem.webos.server/"), "Original Stremio service endpoint remains in the frontend");
 console.log("Frontend verification passed.");

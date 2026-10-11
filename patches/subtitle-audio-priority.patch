@@ -22,22 +22,28 @@
                      return [{
                          label: null !== (n = null === (a = y()) || void 0 === a ? void 0 : a.email) && void 0 !== n ? n : c("ACCOUNT"),
                          icon: "person",
-@@ -480,6 +480,10 @@
+@@ -480,6 +480,13 @@
                                  })))
                              }]
                          }, {
 +                            label: "Prefer Embedded Subtitles",
-+                            checked: () => readSubEmSetting("preferEmbeddedSubtitles"),
-+                            onClick: () => toggleSubEmSetting("preferEmbeddedSubtitles")
++                            options: [{
++                                label: "Prefer Embedded Subtitles",
++                                checked: () => readSubEmSetting("preferEmbeddedSubtitles"),
++                                onClick: () => toggleSubEmSetting("preferEmbeddedSubtitles")
++                            }]
 +                        }, {
                              label: "AUDIO",
                              icon: "audio",
                              options: [{
-@@ -523,2 +523,6 @@
+@@ -523,2 +523,9 @@
                          }, {
 +                            label: "Prefer Audio Over Default",
-+                            checked: () => readSubEmSetting("preferAudioOverDefault"),
-+                            onClick: () => toggleSubEmSetting("preferAudioOverDefault")
++                            options: [{
++                                label: "Prefer Audio Over Default",
++                                checked: () => readSubEmSetting("preferAudioOverDefault"),
++                                onClick: () => toggleSubEmSetting("preferAudioOverDefault")
++                            }]
 +                        }, {
                              label: "SEEK_TIME_DURATION",
 --- video.chunk.js
