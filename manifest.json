@@ -1,0 +1,15 @@
+{
+  "id": "org.barrfarr.stremio.subem",
+  "version": "1.1.6",
+  "type": "web",
+  "title": "Stremio SubEm",
+  "appDescription": "Stremio for LG webOS with opt-in embedded subtitle preference and preferred audio selection.",
+  "iconUri": "https://raw.githubusercontent.com/BarrFarr/Stremio-WebOS-SubEm/main/app/icon.png",
+  "sourceUrl": "https://github.com/BarrFarr/Stremio-WebOS-SubEm",
+  "rootRequired": false,
+  "ipkUrl": "https://github.com/BarrFarr/Stremio-WebOS-SubEm/releases/download/v1.1.6/org.barrfarr.stremio.subem_1.1.6_all.ipk",
+  "ipkHash": {
+    "sha256": "5c4ff72e435cdf10f040966567af8a24a3f2f7add521cb4922d9862938dab47a"
+  },
+  "ipkSize": 61619498
+}

@@ -42,7 +42,7 @@ Preferred audio language
 
 The official Stremio app may sometimes select the first available audio track instead of the user’s configured preferred language.
 
-This build reads the audio tracks exposed by the LG TV’s native media pipeline and automatically selects the track matching the preferred audio language configured in Stremio.
+When enabled in the app's **STREMIO TV** settings, this build reads the audio tracks exposed by the LG TV’s native media pipeline and selects a matching non-commentary track for the preferred audio language configured in Stremio. If no match exists, the stream's original choice is preserved.
 
 This provides more consistent language selection when streams contain multiple audio tracks.
 
@@ -72,13 +72,13 @@ For LG webOS TVs with [Homebrew Channel](https://github.com/webosbrew/webos-home
 2. Open **Settings → Add repository**.
 3. Add this public repository index:
 
-   `https://raw.githubusercontent.com/BarrFarr/Stremio-WebOS-SubEm/release/1.1.5-subaudio/webosbrew/apps.json`
+   `https://raw.githubusercontent.com/BarrFarr/Stremio-WebOS-SubEm/main/webosbrew/apps.json`
 
 4. Return to the app list.
 5. Find **Stremio SubEm**.
 6. Install and launch the app.
 
-The index references this fork's latest release manifest. That manifest must be published alongside the IPK and contains the direct download URL, version, SHA-256 checksum and byte size. The new source configuration does not become installable through Homebrew until a release with both assets exists.
+The index references this fork's latest release manifest. That manifest contains the direct download URL, version, SHA-256 checksum and byte size for the published package.
 
 ## GitHub Release
 
@@ -110,10 +110,10 @@ npm install --global @webos-tools/cli
 make package
 ```
 
-The build uses the checked-in `frontend-webos/` snapshot, downloads the pinned Stremio webOS server and FFmpeg/FFprobe assets, verifies the FFmpeg archive checksum, applies `patches/subtitle-audio-priority.patch`, verifies the resulting frontend bundles and packages the IPK. It does not blindly apply the legacy patches over a snapshot that may already contain those changes.
+The build uses the checked-in `frontend-webos/` snapshot, downloads the pinned Stremio webOS server and FFmpeg/FFprobe assets, verifies the FFmpeg archive checksum, applies the exact `patches/subtitle-audio-priority.patch`, verifies the resulting frontend bundles and packages the IPK.
 
-## Release automation
+## Manual release
 
-CI is intended to build and validate branch pushes and pull requests without publishing a release. Publishing is a separate operation triggered by a semantic-version tag such as `v1.1.6`. The release workflow builds and inspects the IPK, computes its SHA-256 and size, creates `manifest.json`, and publishes both as release assets.
+Releases are built and published locally. After `make package` and package inspection, calculate the final IPK's SHA-256 and byte size, create `manifest.json`, and upload both files to the matching GitHub Release.
 
-A successful CI build is not a substitute for manually testing playback and track selection on the target LG webOS TV.
+Playback, audio-track selection and subtitle selection should still be smoke-tested on the target LG webOS TV when a device is available.

@@ -30,8 +30,8 @@ service/              # webOS service
   server.js           # [downloaded] Official Stremio streaming server
   www/                # [built] checked-in frontend snapshot + subtitle/audio patch
 
-patches/              # Patches applied to Vidaa frontend files during build
-  video.chunk.js.patch
+patches/              # The one patch applied to the checked-in frontend during build
+  subtitle-audio-priority.patch
 ```
 
 ## How it works
@@ -45,15 +45,7 @@ The proxy exists because the app loads from `file://` which cannot XHR/fetch to 
 
 ## Patches
 
-`frontend-webos/` is the checked-in frontend snapshot used for this build. Only `subtitle-audio-priority.patch` is currently applied during `make build`. The other patch files are retained as development diffs and must be checked against the current snapshot before reuse; do not blindly apply historical patches on top of changes already present.
-
-### Historical audio-track patch
-
-The older `audio-track-selection.patch` contains changes for native audio-track order and switching. It targets an older version of `video.chunk.js` and does not apply unchanged to the checked-in snapshot. The current bundle already contains some related native-track handling, but the patch has not been fully ported. Review this separately before claiming every part of that patch is included. Its intended changes were to:
-
-1. **Builds the audio track list from the native `audioTracks` API** — the native API returns tracks in Luna's internal order, so `selectTrack` indices match correctly (the original code used `getTracksData` from the streaming server which returns tracks in ffprobe order — a different order)
-2. **Enriches track labels** from the streaming server's `/tracks/` endpoint when available
-3. **Auto-selects the preferred audio language** from the user's Stremio profile settings (`profile.settings.audioLanguage`)
+`frontend-webos/` is the checked-in frontend snapshot used for this build. Only `subtitle-audio-priority.patch` is applied during `make build`; the old audio-track patch was removed because it was a corrupt, overlapping diff against an older snapshot. Native track enumeration, label enrichment and switching already live in the checked-in bundle, while the applied patch adds the opt-in language selection around that code.
 
 ## Deploy
 
@@ -73,9 +65,9 @@ Extends the WebOsVideo player (`video.chunk.js`) with two opt-in behaviours cont
 
 #### subtitleLanguage + preferEmbeddedSubtitles — embedded subtitle auto-select
 
-When `profile.settings.preferEmbeddedSubtitles` is `true` and `profile.settings.subtitlesLanguage` is set, the `onloadedmetadata` handler scans `d.textTracks` for a track whose `kind` is `subtitles` or `captions` and whose language matches. The first match is set to `mode="showing"`; all other subtitle/caption tracks are set to `mode="disabled"`. Tracks of other kinds (chapters, metadata) are left untouched. Falls back silently (no tracks modified) if there is no match, leaving Stremio's own external-subtitle logic in charge.
+When `profile.settings.preferEmbeddedSubtitles` is `true` and `profile.settings.subtitlesLanguage` is set, the `onloadedmetadata` handler scans `d.textTracks` for a track whose `kind` is `subtitles` or `captions` and whose language matches. Only when a match exists is it set to `mode="showing"` and the other subtitle/caption tracks disabled; tracks of other kinds (chapters, metadata) are untouched. If there is no match, no track is changed and Stremio's external-subtitle logic remains in charge.
 
-Language codes are normalised: 2-letter ISO 639-1 codes (e.g. `pl`, `en`) are mapped to 3-letter ISO 639-2/T codes (`pol`, `eng`) before comparison so a track labelled `pol` matches a setting of `pl`.
+Language codes are normalised: 2-letter ISO 639-1 codes (e.g. `pl`, `en`) and region forms (e.g. `en-US`) are mapped to 3-letter ISO 639-2/T codes (`pol`, `eng`) before comparison so a track labelled `pol` matches a setting of `pl`.
 
 #### preferAudioOverDefault — opt-in audio language auto-select
 
@@ -84,7 +76,7 @@ By default the player uses whatever audio track the stream starts with. Setting 
 - `onloadedmetadata` — selects the preferred track immediately when metadata loads
 - `addtrack` event handler — re-runs selection when tracks are added after initial load (common with adaptive streams)
 
-Without this flag the audio auto-select code is skipped entirely, so the stream default is preserved even when `audioLanguage` is set. This is useful when `audioLanguage` should only apply to content that needs an explicit override.
+Without this flag the audio auto-select code is skipped entirely, so the stream default is preserved even when `audioLanguage` is set. A configured language is used only when a matching non-commentary track exists; otherwise the original stream choice remains active.
 
 #### Setting values via the browser / webOS console
 
@@ -93,7 +85,7 @@ Open the webOS developer console (or a Chromium remote debug session pointed at 
 ```js
 // Enable embedded subtitle auto-select for Polish
 var p = JSON.parse(localStorage.getItem("profile"));
-p.settings.subtitleLanguage = "pol";          // ISO 639-2/T or 2-letter code
+p.settings.subtitlesLanguage = "pol";         // ISO 639-2/T or 2-letter code
 p.settings.preferEmbeddedSubtitles = true;
 localStorage.setItem("profile", JSON.stringify(p));
 

@@ -1,12 +1,18 @@
 DEVICE ?= tv
-APP_ID := $(shell python3 -c 'import json; print(json.load(open("app/appinfo.json"))["id"])')
+PYTHON ?= python
+APP_ID := $(shell $(PYTHON) -c 'import json; print(json.load(open("app/appinfo.json"))["id"])')
 SERVER_VERSION ?= 4.20.19
 FFMPEG_VERSION ?= 7.0.2
 FFMPEG_URL ?= https://johnvansickle.com/ffmpeg/releases/ffmpeg-$(FFMPEG_VERSION)-arm64-static.tar.xz
 FFMPEG_SHA256 ?= f4149bb2b0784e30e99bdda85471c9b5930d3402014e934a5098b41d0f7201b1
-VERSION := $(shell python3 -c 'import json; print(json.load(open("app/appinfo.json"))["version"])')
+VERSION := $(shell $(PYTHON) -c 'import json; print(json.load(open("app/appinfo.json"))["version"])')
 IPK = $(APP_ID)_$(VERSION)_all.ipk
 PATCH = patches/subtitle-audio-priority.patch
+SHA256SUM ?= $(shell command -v sha256sum 2>/dev/null || command -v shasum 2>/dev/null)
+SHA256SUM_ARGS ?=
+ifneq (,$(findstring shasum,$(notdir $(SHA256SUM))))
+SHA256SUM_ARGS := -a 256
+endif
 
 .PHONY: build package deploy launch restart clean check-frontend
 
@@ -19,17 +25,19 @@ service/bin/.ffmpeg-ready:
 	@mkdir -p service/bin /tmp/stremio-ffmpeg
 	@rm -f /tmp/stremio-ffmpeg/ffmpeg.tar.xz
 	@curl -fLsS --retry 3 --retry-delay 2 -o /tmp/stremio-ffmpeg/ffmpeg.tar.xz "$(FFMPEG_URL)"
-	@echo "$(FFMPEG_SHA256)  /tmp/stremio-ffmpeg/ffmpeg.tar.xz" | sha256sum -c -
+	@test -n "$(SHA256SUM)" || (echo "ERROR: sha256sum or shasum is required" && exit 1)
+	@echo "$(FFMPEG_SHA256)  /tmp/stremio-ffmpeg/ffmpeg.tar.xz" | $(SHA256SUM) $(SHA256SUM_ARGS) -c -
 	@tar xJ --strip-components=1 -f /tmp/stremio-ffmpeg/ffmpeg.tar.xz -C /tmp/stremio-ffmpeg
-	@test -x /tmp/stremio-ffmpeg/ffmpeg
-	@test -x /tmp/stremio-ffmpeg/ffprobe
+	@chmod +x /tmp/stremio-ffmpeg/ffmpeg /tmp/stremio-ffmpeg/ffprobe
+	@test -f /tmp/stremio-ffmpeg/ffmpeg
+	@test -f /tmp/stremio-ffmpeg/ffprobe
 	@cp /tmp/stremio-ffmpeg/ffmpeg /tmp/stremio-ffmpeg/ffprobe service/bin/
 	@chmod +x service/bin/ffmpeg service/bin/ffprobe
 	@touch $@
 	@rm -rf /tmp/stremio-ffmpeg
 
 service/bin/ffmpeg service/bin/ffprobe: service/bin/.ffmpeg-ready
-	@test -x $@
+	@test -f $@
 
 build: service/server.js service/bin/ffmpeg service/bin/ffprobe
 	@test -d frontend-webos || (echo "ERROR: frontend-webos/ is missing" && exit 1)
@@ -45,7 +53,7 @@ check-frontend:
 
 package: build
 	@rm -f "$(IPK)"
-	@ares-package --no-minify app service -o .
+	@ares-package app service -o .
 	@test -s "$(IPK)" || (echo "ERROR: package $(IPK) was not created" && exit 1)
 
 deploy: package

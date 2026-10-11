@@ -9,7 +9,7 @@
     {
       "id": "org.barrfarr.stremio.subem",
       "title": "Stremio SubEm",
-      "iconUri": "https://raw.githubusercontent.com/BarrFarr/Stremio-WebOS-SubEm/release/1.1.5-subaudio/app/icon.png",
+      "iconUri": "https://raw.githubusercontent.com/BarrFarr/Stremio-WebOS-SubEm/main/app/icon.png",
       "manifestUrl": "https://github.com/BarrFarr/Stremio-WebOS-SubEm/releases/latest/download/manifest.json",
       "pool": "main",
       "shortDescription": "Stremio for LG webOS with optional embedded-subtitle preference and preferred-audio selection."
