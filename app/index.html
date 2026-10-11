@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Stremio</title>
+  <title>Stremio SubEm</title>
   <style>
     body {
       background: #0c0b11;
@@ -43,7 +43,7 @@
 
 <div id="loader" style="display:flex; flex-direction:column; align-items:center;">
   <div class="spinner"></div>
-  <div id="status">Loading Stremio...</div>
+  <div id="status">Loading Stremio SubEm...</div>
 </div>
 
 <script>
@@ -64,7 +64,7 @@ bridge.onservicecallback = function(response) {
 };
 
 // Call the background service
-bridge.call('luna://io.strem.webos.server/start', '{}');
+bridge.call('luna://org.barrfarr.stremio.subem.server/start', '{}');
 
 // Secondary polling fallback in case Luna notification is delayed
 var pollCount = 0;

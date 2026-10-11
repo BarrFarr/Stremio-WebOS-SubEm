@@ -18,7 +18,7 @@ var proxyAgent = new http.Agent({
     keepAliveMsecs: 30000
 });
 
-var service = new Service('io.strem.webos.server');
+var service = new Service('org.barrfarr.stremio.subem.server');
 var ready = false;
 var streamingReady = false;
 var pendingMessages = [];

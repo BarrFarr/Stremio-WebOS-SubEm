@@ -1,87 +1,101 @@
 name: Release
-
 on:
   push:
     tags:
       - 'v*'
-
 permissions:
   contents: write
-
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 jobs:
   release:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Get version
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Validate tag and set version
         id: version
-        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-
-      - name: Set package version
+        shell: bash
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
-
-          jq --arg v "$VERSION" \
-            '.version = $v' \
-            app/appinfo.json > appinfo.tmp
-
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          if [[ ! "$TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            echo "Expected a tag like v1.1.6; got $TAG" >&2
+            exit 1
+          fi
+          VERSION="${BASH_REMATCH[1]}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          jq --arg v "$VERSION" '.version = $v' app/appinfo.json > appinfo.tmp
           mv appinfo.tmp app/appinfo.json
-
-          jq --arg v "$VERSION" \
-            '.version = $v' \
-            service/package.json > package.tmp
-
+          jq --arg v "$VERSION" '.version = $v' service/package.json > package.tmp
           mv package.tmp service/package.json
-
+          test "$(jq -r .id app/appinfo.json)" = "org.barrfarr.stremio.subem"
+          test "$(jq -r .name service/package.json)" = "org.barrfarr.stremio.subem.server"
       - name: Install webOS CLI
         run: |
-          npm install -g @webos-tools/cli
-          ares-config --profile tv
+          set -euo pipefail
+          npm install --global @webos-tools/cli
+          command -v ares-package
           ares -V
-
       - name: Build package
-        run: make package
-
-      - name: Verify package
         run: |
+          set -euo pipefail
+          make package
+      - name: Verify package and metadata
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP_ID="$(jq -r .id app/appinfo.json)"
           VERSION="${{ steps.version.outputs.version }}"
-          IPK="io.strem.webos_${VERSION}_all.ipk"
-
-          test -f "$IPK"
+          IPK="${APP_ID}_${VERSION}_all.ipk"
+          test -s "$IPK"
           ares-package -i "$IPK"
           ares-package -I "$IPK"
-      
-      - name: Generate Homebrew manifest
+          echo "ipk=$IPK" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(sha256sum "$IPK" | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+          echo "size=$(stat --format=%s "$IPK")" >> "$GITHUB_OUTPUT"
+      - name: Generate and validate Homebrew manifest
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+          IPK: ${{ steps.package.outputs.ipk }}
+          SHA256: ${{ steps.package.outputs.sha256 }}
+          SIZE: ${{ steps.package.outputs.size }}
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          IPK="io.strem.webos_${VERSION}_all.ipk"
-
-          SHA256=$(sha256sum "$IPK" | cut -d' ' -f1)
-          SIZE=$(stat --format=%s "$IPK")
-
-          cat > manifest.json << EOF2
-          {
-            "id": "io.strem.webos",
-            "version": "${VERSION}",
-            "type": "web",
-            "title": "Stremio",
-            "appDescription": "Standalone optimized Stremio build for LG webOS TVs.",
-            "iconUri": "https://raw.githubusercontent.com/spcljense/stremio-webos/main/app/icon.png",
-            "sourceUrl": "https://github.com/spcljense/stremio-webos",
-            "rootRequired": false,
-            "ipkUrl": "${IPK}",
-            "ipkHash": {
-              "sha256": "${SHA256}"
-            },
-            "ipkSize": ${SIZE}
-          }
-          EOF2
-
-      - name: Create GitHub release
+          set -euo pipefail
+          REPO_URL="https://github.com/${GITHUB_REPOSITORY}"
+          RAW_BASE="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/release/1.1.5-subaudio"
+          IPK_URL="${REPO_URL}/releases/download/${TAG}/${IPK}"
+          APP_ID="$(jq -r .id app/appinfo.json)"
+          jq -n \
+            --arg id "$APP_ID" --arg version "$VERSION" --arg title "Stremio SubEm" \
+            --arg description "Stremio for LG webOS with optional embedded-subtitle preference and preferred-audio selection." \
+            --arg icon "${RAW_BASE}/app/icon.png" --arg source "$REPO_URL" \
+            --arg ipkUrl "$IPK_URL" --arg sha256 "$SHA256" --argjson size "$SIZE" \
+            '{
+              id: $id, version: $version, type: "web", title: $title,
+              appDescription: $description, iconUri: $icon, sourceUrl: $source,
+              rootRequired: false, ipkUrl: $ipkUrl,
+              ipkHash: {sha256: $sha256}, ipkSize: $size
+            }' > manifest.json
+          jq -e . manifest.json >/dev/null
+          test "$(jq -r .id manifest.json)" = "$APP_ID"
+          test "$(jq -r .version manifest.json)" = "$VERSION"
+          test "$(jq -r .ipkHash.sha256 manifest.json)" = "$SHA256"
+          test "$(jq -r .ipkSize manifest.json)" = "$SIZE"
+          [[ "$(jq -r .ipkUrl manifest.json)" == https://github.com/*/releases/download/*/*.ipk ]]
+      - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
+          name: Stremio SubEm ${{ steps.version.outputs.version }}
+          body: |
+            Stremio SubEm for LG webOS.
+            Includes profile-backed controls for embedded subtitle preference and preferred audio selection.
           files: |
-            io.strem.webos_${{ steps.version.outputs.version }}_all.ipk
+            ${{ steps.package.outputs.ipk }}
             manifest.json

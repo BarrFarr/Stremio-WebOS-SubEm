@@ -400,7 +400,7 @@
                                     return (p ? (window.__FORCE_TRANSCODE__ = !1, Promise.resolve(!1)) : t.canPlayStream({
                                         url: r
                                     }, f)).catch((function(e) {
-                                        return console.warn("Media probe error, falling back to transcode", e), !1
+                                        return console.warn("Media probe error, falling back to direct playback", e), !0
                                     })).then((function(e) {
                                         if (e) return {
                                             mediaURL: r,
