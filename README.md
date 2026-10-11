@@ -9,6 +9,17 @@ This project is maintained specifically for LG webOS and focuses on performance,
 
 Built on Stremio Theater and stripped of unnecessary non-webOS platform code for a cleaner, faster, and more streamlined LG webOS experience.
 
+## Origin and credits
+
+**Stremio SubEm** is an unofficial fork of [spcljense/stremio-webos](https://github.com/spcljense/stremio-webos) by Kieran Brown (spcljense). That project is an LG webOS build of the Stremio Theater frontend. This fork keeps the upstream code and adds:
+
+- **Prefer Embedded Subtitles**: the subtitle track built into the video file, in the language chosen in Settings, is used first. Addon subtitles (for example OpenSubtitles) are used only when the file has no such track.
+- **Prefer Audio Over Default**: the audio track in your chosen language is used instead of the track the file marks as default.
+- A separate app ID (`org.barrfarr.stremio.subem`), so it installs alongside the official Stremio app and the upstream build.
+
+This project is not affiliated with or endorsed by Stremio. "Stremio" is a trademark of its respective owner. The streaming server (`server.js`) is downloaded from Stremio's official distribution at build time and is not part of this repository.
+
+**License:** the upstream repository does not publish a license. This fork therefore does not add one, and the upstream code remains under its authors' rights. The fork's own additions (`patches/subtitle-audio-priority.patch` and the `scripts/test-subem-*.js` tests) are offered to upstream and may be reused by it.
 Features
 
 * Multi-profile support for users with an active Stremio Supporter subscription
