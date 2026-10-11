@@ -64,3 +64,41 @@ make package   # build + create IPK
 make restart   # close + relaunch on TV
 make clean     # remove all build artifacts
 ```
+
+### subtitle-audio-priority.patch
+
+Extends the WebOsVideo player (`video.chunk.js`) with two opt-in behaviours controlled by settings stored in `profile` localStorage:
+
+#### subtitleLanguage + preferEmbeddedSubtitles — embedded subtitle auto-select
+
+When `preferEmbeddedSubtitles` is `true` and `subtitleLanguage` is set, the `onloadedmetadata` handler scans `d.textTracks` for a track whose `kind` is `subtitles` or `captions` and whose language matches. The first match is set to `mode="showing"`; all other subtitle/caption tracks are set to `mode="disabled"`. Tracks of other kinds (chapters, metadata) are left untouched. Falls back silently (no tracks modified) if there is no match, leaving Stremio's own external-subtitle logic in charge.
+
+Language codes are normalised: 2-letter ISO 639-1 codes (e.g. `pl`, `en`) are mapped to 3-letter ISO 639-2/T codes (`pol`, `eng`) before comparison so a track labelled `pol` matches a setting of `pl`.
+
+#### preferAudioOverDefault — opt-in audio language auto-select
+
+By default the player uses whatever audio track the stream starts with. Setting `preferAudioOverDefault` to `true` enables the existing `audioLanguage`-based auto-select in **both** places it runs:
+
+- `onloadedmetadata` — selects the preferred track immediately when metadata loads
+- `addtrack` event handler — re-runs selection when tracks are added after initial load (common with adaptive streams)
+
+Without this flag the audio auto-select code is skipped entirely, so the stream default is preserved even when `audioLanguage` is set. This is useful when `audioLanguage` should only apply to content that needs an explicit override.
+
+#### Setting values via the browser / webOS console
+
+Open the webOS developer console (or a Chromium remote debug session pointed at the TV) and run:
+
+```js
+// Enable embedded subtitle auto-select for Polish
+var p = JSON.parse(localStorage.getItem("profile"));
+p.settings.subtitleLanguage = "pol";          // ISO 639-2/T or 2-letter code
+p.settings.preferEmbeddedSubtitles = true;
+localStorage.setItem("profile", JSON.stringify(p));
+
+// Opt in to audio language auto-select (audioLanguage must also be set)
+p.settings.audioLanguage = "pol";
+p.settings.preferAudioOverDefault = true;
+localStorage.setItem("profile", JSON.stringify(p));
+```
+
+To disable either feature set the boolean to `false` (or `delete` the key). A page reload is required for the change to take effect.
