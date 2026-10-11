@@ -9,7 +9,7 @@
   "rootRequired": false,
   "ipkUrl": "https://github.com/BarrFarr/Stremio-WebOS-SubEm/releases/download/v1.1.6/org.barrfarr.stremio.subem_1.1.6_all.ipk",
   "ipkHash": {
-    "sha256": "8e50a813b68a25235469e542e84801e6eb064247c0f0ca597fb526633cd73185"
+    "sha256": "13911fb5a61eaf5d6eef08cd4844830711024bcb9d5c2cb2ba598e694c7ce7e3"
   },
-  "ipkSize": 61429878
+  "ipkSize": 61429586
 }

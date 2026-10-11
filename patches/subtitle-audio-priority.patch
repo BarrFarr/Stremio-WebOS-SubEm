@@ -1,52 +1,78 @@
 --- settings.chunk.js
 +++ settings.chunk.js
-@@ -480,6 +480,13 @@
+@@ -342,6 +342,16 @@
+                 l = o(8327),
+                 c = (o(8433), o(2011), o(5235), o(4997), o(7105), o(4303)),
+                 h = o(289);
++            const [subEmRevision, setSubEmRevision] = (0, n.n5)(0),
++                readSubEmSetting = key => {
++                    subEmRevision();
++                    try { return localStorage.getItem("stremio_subem_" + key) === "true"; } catch (__e) { return !1; }
++                },
++                toggleSubEmSetting = key => {
++                    const value = !readSubEmSetting(key);
++                    try { localStorage.setItem("stremio_subem_" + key, String(value)); } catch (__e) {}
++                    setSubEmRevision(r => r + 1);
++                };
+             const d = e => (0, c.Mj)(e).toRgbString(),
+                 u = l.eo.all.sort(((e, t) => e.label < t.label ? -1 : e.label > t.label ? 1 : 0)),
+                 p = (e, t, o) => {
+@@ -480,6 +490,13 @@
+                                     })
                                  })))
                              }]
-                         }, {
++                        }, {
 +                            label: "Prefer Embedded Subtitles",
 +                            options: [{
 +                                label: "Prefer Embedded Subtitles",
-+                                checked: () => !0 === b().preferEmbeddedSubtitles,
-+                                onClick: () => v({ preferEmbeddedSubtitles: !b().preferEmbeddedSubtitles })
++                                checked: () => readSubEmSetting("preferEmbeddedSubtitles"),
++                                onClick: () => toggleSubEmSetting("preferEmbeddedSubtitles")
 +                            }]
-+                        }, {
+                         }, {
                              label: "AUDIO",
                              icon: "audio",
-                             options: [{
-@@ -521,6 +528,13 @@
+@@ -520,6 +537,13 @@
+                                     })
+                                 })))]
                              }]
-                         }, {
++                        }, {
 +                            label: "Prefer Audio Over Default",
 +                            options: [{
 +                                label: "Prefer Audio Over Default",
-+                                checked: () => !0 === b().preferAudioOverDefault,
-+                                onClick: () => v({ preferAudioOverDefault: !b().preferAudioOverDefault })
++                                checked: () => readSubEmSetting("preferAudioOverDefault"),
++                                onClick: () => toggleSubEmSetting("preferAudioOverDefault")
 +                            }]
-+                        }, {
+                         }, {
                              label: "SEEK_TIME_DURATION",
+                             icon: "skip-forward",
 --- video.chunk.js
 +++ video.chunk.js
-@@ -18371,1 +18371,3 @@
+@@ -18368,12 +18368,11 @@
+                 }, d.canplaythrough = function() {
+                     S("buffering"), S("buffered")
+                 }, d.onloadedmetadata = function() {
 -                    if (d.audioTracks && d.audioTracks.length > 0) {
 +                    var __prefAudioOverDef = false;
-+                    try { __prefAudioOverDef = !!JSON.parse(localStorage.getItem("profile")).settings.preferAudioOverDefault; } catch(__e) {}
++                    try { __prefAudioOverDef = localStorage.getItem("stremio_subem_preferAudioOverDefault") === "true"; } catch(__e) {}
 +                    if (__prefAudioOverDef && d.audioTracks && d.audioTracks.length > 0) {
-@@ -18374,3 +18376,0 @@
+                         var __prefLang = null;
+                         try { __prefLang = JSON.parse(localStorage.getItem("profile")).settings.audioLanguage; } catch(__e) {}
 -                        if (!__prefLang) {
 -                            try { __prefLang = (navigator.language || "").substring(0, 2); } catch(__e) {}
 -                        }
-@@ -18380,1 +18379,1 @@
--                        var __normL = function(l) { if (!l) return ""; l = String(l).toLowerCase().trim(); if (l.length === 2 && __lMap[l]) return __lMap[l]; l = l.slice(0, 3); return __bToT[l] || l; };
-+                        var __normL = function(l) { if (!l) return ""; l = String(l).toLowerCase().trim().split(/[-_]/)[0]; if (__lMap[l]) return __lMap[l]; l = l.slice(0, 3); return __bToT[l] || l; };
-@@ -18403,2 +18402,29 @@
+                         var __prefIdx = -1;
+                         var __lMap = { en:"eng", es:"spa", fr:"fra", de:"deu", it:"ita", pt:"por", ru:"rus", nl:"nld", pl:"pol", ja:"jpn", ko:"kor", zh:"zho", hi:"hin", tr:"tur", ar:"ara", sv:"swe", no:"nor", da:"dan", fi:"fin", el:"ell", cs:"ces", hu:"hun", ro:"ron", he:"heb", uk:"ukr", vi:"vie" };
+                         var __bToT = { fre:"fra", ger:"deu", dut:"nld", chi:"zho", gre:"ell", cze:"ces" };
+@@ -18401,6 +18400,32 @@
+                         S("audioTracks");
+                         S("selectedAudioTrackId");
                      }
 +                    try {
 +                        var __subLang = null, __prefEmb = false;
 +                        try {
 +                            var __subProf = JSON.parse(localStorage.getItem("profile")).settings;
 +                            __subLang = __subProf.subtitlesLanguage || null;
-+                            __prefEmb = !!__subProf.preferEmbeddedSubtitles;
++                            __prefEmb = localStorage.getItem("stremio_subem_preferEmbeddedSubtitles") === "true";
 +                        } catch(__e) {}
 +                        if (__prefEmb && __subLang && d.textTracks && d.textTracks.length > 0) {
 +                            var __sMap = { en:"eng", es:"spa", fr:"fra", de:"deu", it:"ita", pt:"por", ru:"rus", nl:"nld", pl:"pol", ja:"jpn", ko:"kor", zh:"zho", hi:"hin", tr:"tur", ar:"ara", sv:"swe", no:"nor", da:"dan", fi:"fin", el:"ell", cs:"ces", hu:"hun", ro:"ron", he:"heb", uk:"ukr", vi:"vie" };
@@ -68,18 +94,25 @@
 +                        }
 +                    } catch(__ste) {}
                      S("loaded")
-@@ -20709,2 +20735,8 @@
+                 }, d.onloadeddata = function() {
+                     S("buffering"), S("buffered")
+@@ -20707,11 +20732,17 @@
+                         // Auto-select preferred audio language from Stremio settings
+                         var prefLang = null;
                          try { prefLang = JSON.parse(localStorage.getItem("profile")).settings.audioLanguage; } catch(e) {}
 +                        var prefAudioOverDef = false;
-+                        try { prefAudioOverDef = !!JSON.parse(localStorage.getItem("profile")).settings.preferAudioOverDefault; } catch(e) {}
++                        try { prefAudioOverDef = localStorage.getItem("stremio_subem_preferAudioOverDefault") === "true"; } catch(e) {}
 +                        var __aMap = { en:"eng", es:"spa", fr:"fra", de:"deu", it:"ita", pt:"por", ru:"rus", nl:"nld", pl:"pol", ja:"jpn", ko:"kor", zh:"zho", hi:"hin", tr:"tur", ar:"ara", sv:"swe", no:"nor", da:"dan", fi:"fin", el:"ell", cs:"ces", hu:"hun", ro:"ron", he:"heb", uk:"ukr", vi:"vie" };
 +                        var __aBToT = { fre:"fra", ger:"deu", dut:"nld", chi:"zho", gre:"ell", cze:"ces" };
 +                        var __normA = function(l) { if (!l) return ""; l = String(l).toLowerCase().trim().split(/[-_]/)[0]; if (__aMap[l]) return __aMap[l]; l = l.slice(0,3); return __aBToT[l] || l; };
 +                        var __isCommA = function(t) { var s = (((t && t.label)||"") + " " + ((t && t.kind)||"")).toLowerCase(); return s.indexOf("commentary") !== -1 || s.indexOf("description") !== -1 || s.indexOf("audio desc") !== -1 || s.indexOf("director") !== -1; };
                          var prefIdx = -1;
-@@ -20711,1 +20743,1 @@
 -                        if (prefLang) {
 +                        if (prefAudioOverDef && prefLang) {
-@@ -20714,1 +20746,1 @@
+                             for (var ai = 0; ai < A.audioTracks.length; ai++) {
+                                 var tl = A.audioTracks[ai].language || "";
 -                                if (tl === prefLang || tl.substring(0,2) === prefLang.substring(0,2)) {
 +                                if (!__isCommA(A.audioTracks[ai]) && __normA(tl) === __normA(prefLang)) {
+                                     prefIdx = ai; break;
+                                 }
+                             }
