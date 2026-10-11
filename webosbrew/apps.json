@@ -7,12 +7,12 @@
   },
   "packages": [
     {
-      "id": "io.strem.webos",
-      "title": "Stremio",
-      "iconUri": "https://raw.githubusercontent.com/spcljense/stremio-webos/main/app/icon.png",
-      "manifestUrl": "https://github.com/spcljense/stremio-webos/releases/latest/download/manifest.json",
+      "id": "org.barrfarr.stremio.subem",
+      "title": "Stremio SubEm",
+      "iconUri": "https://raw.githubusercontent.com/BarrFarr/Stremio-WebOS-SubEm/release/1.1.5-subaudio/app/icon.png",
+      "manifestUrl": "https://github.com/BarrFarr/Stremio-WebOS-SubEm/releases/latest/download/manifest.json",
       "pool": "main",
-      "shortDescription": "Optimized LG webOS-only Stremio build with faster startup, reduced background/fanart loading, lazy poster loading, native media integration, preferred audio language support, Homebrew installation, and Tizen/TitanOS/NetTV/VIDAA/Hisense code stripped out."
+      "shortDescription": "Stremio for LG webOS with optional embedded-subtitle preference and preferred-audio selection."
     }
   ]
 }

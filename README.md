@@ -21,7 +21,8 @@ Features
     * Visual segment markers in the playback timeline
 * Faster startup and responsive TV navigation
 * Native LG webOS media player integration
-* Automatic preferred audio language selection
+* Configurable preferred audio language selection
+* Optional embedded subtitle language preference
 * Improved handling of multiple audio tracks
 * Official Stremio streaming server integration
 * Optimized specifically for LG webOS TVs
@@ -65,28 +66,54 @@ This makes it possible to use or test this build without replacing the official 
 
 ## Homebrew Channel
 
-For [rooted (OPTIONAL NOT REQUIRED)] LG webOS TVs with [Homebrew Channel](https://github.com/webosbrew/webos-homebrew-channel):
+For LG webOS TVs with [Homebrew Channel](https://github.com/webosbrew/webos-homebrew-channel):
 
 1. Open **Homebrew Channel** on your TV.
-2. Open **Settings**.
-3. Add the following repository:
+2. Open **Settings → Add repository**.
+3. Add this public repository index:
 
-   `https://raw.githubusercontent.com/spcljense/stremio-webos/main/webosbrew/apps.json`
+   `https://raw.githubusercontent.com/BarrFarr/Stremio-WebOS-SubEm/release/1.1.5-subaudio/webosbrew/apps.json`
 
 4. Return to the app list.
-5. Find **Stremio**.
+5. Find **Stremio SubEm**.
 6. Install and launch the app.
 
-Updates published through this repository can also be installed through Homebrew Channel.
+The index references this fork's latest release manifest. That manifest must be published alongside the IPK and contains the direct download URL, version, SHA-256 checksum and byte size. The new source configuration does not become installable through Homebrew until a release with both assets exists.
 
 ## GitHub Release
 
-Prebuilt IPK packages are available from the GitHub Releases page:
+Prebuilt IPK packages are available from this fork's [GitHub Releases page](https://github.com/BarrFarr/Stremio-WebOS-SubEm/releases).
 
-[Download the latest release](https://github.com/spcljense/stremio-webos/releases/latest)
-
-Download the IPK matching the current release, for example:
+For the separate-install build, the package name after the next release will follow this pattern:
 
 ```text
-io.strem.webos_1.1.0_all.ipk
- 
+org.barrfarr.stremio.subem_1.1.6_all.ipk
+```
+
+## Manual installation
+
+With webOS CLI configured and the TV added as device `tv`:
+
+```sh
+ares-install --device tv org.barrfarr.stremio.subem_1.1.6_all.ipk
+ares-launch --device tv org.barrfarr.stremio.subem
+```
+
+The fork uses its own App ID and service ID so it can coexist with the upstream app. It does not automatically migrate the upstream app's local storage or profile state.
+
+## Build from source
+
+Requirements: Node.js 20, Python 3, GNU Make, `curl`, `tar`, `patch`, `sha256sum` and the webOS CLI package.
+
+```sh
+npm install --global @webos-tools/cli
+make package
+```
+
+The build uses the checked-in `frontend-webos/` snapshot, downloads the pinned Stremio webOS server and FFmpeg/FFprobe assets, verifies the FFmpeg archive checksum, applies `patches/subtitle-audio-priority.patch`, verifies the resulting frontend bundles and packages the IPK. It does not blindly apply the legacy patches over a snapshot that may already contain those changes.
+
+## Release automation
+
+CI is intended to build and validate branch pushes and pull requests without publishing a release. Publishing is a separate operation triggered by a semantic-version tag such as `v1.1.6`. The release workflow builds and inspects the IPK, computes its SHA-256 and size, creates `manifest.json`, and publishes both as release assets.
+
+A successful CI build is not a substitute for manually testing playback and track selection on the target LG webOS TV.

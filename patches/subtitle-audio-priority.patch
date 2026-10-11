@@ -1,56 +1,54 @@
 --- settings.chunk.js
 +++ settings.chunk.js
-@@ -480,7 +480,16 @@
+@@ -480,6 +480,14 @@
                                  })))
                              }]
                          }, {
 +                            label: "Prefer Embedded Subtitles",
 +                            options: [{
-+                                checked: () => localStorage.getItem("stremio_prefer_embedded_subs") === "true",
-+                                onClick: () => {
-+                                    var _v = localStorage.getItem("stremio_prefer_embedded_subs") !== "true";
-+                                    localStorage.setItem("stremio_prefer_embedded_subs", String(_v));
-+                                }
++                                checked: () => !!b().preferEmbeddedSubtitles,
++                                onClick: () => v({
++                                    preferEmbeddedSubtitles: !b().preferEmbeddedSubtitles
++                                })
 +                            }]
 +                        }, {
                              label: "AUDIO",
                              icon: "audio",
                              options: [{
-@@ -521,6 +530,15 @@
-                                 })))
-                             }]
+@@ -523,2 +531,10 @@
                          }, {
 +                            label: "Prefer Audio Over Default",
 +                            options: [{
-+                                checked: () => localStorage.getItem("stremio_prefer_audio_over_default") === "true",
-+                                onClick: () => {
-+                                    var _v = localStorage.getItem("stremio_prefer_audio_over_default") !== "true";
-+                                    localStorage.setItem("stremio_prefer_audio_over_default", String(_v));
-+                                }
++                                checked: () => !!b().preferAudioOverDefault,
++                                onClick: () => v({
++                                    preferAudioOverDefault: !b().preferAudioOverDefault
++                                })
 +                            }]
 +                        }, {
                              label: "SEEK_TIME_DURATION",
-                             icon: "skip-forward",
-                             options: l.aH.lg.map((e => ({
 --- video.chunk.js
 +++ video.chunk.js
 @@ -18369,6 +18369,8 @@
                      S("buffering"), S("buffered")
                  }, d.onloadedmetadata = function() {
 -                    if (d.audioTracks && d.audioTracks.length > 0) {
-+                    var __prefAudioOverDef = localStorage.getItem("stremio_prefer_audio_over_default") === "true";
++                    var __prefAudioOverDef = false;
++                    try { __prefAudioOverDef = !!JSON.parse(localStorage.getItem("profile")).settings.preferAudioOverDefault; } catch(__e) {}
 +                    if (__prefAudioOverDef && d.audioTracks && d.audioTracks.length > 0) {
                          var __prefLang = null;
                          try { __prefLang = JSON.parse(localStorage.getItem("profile")).settings.audioLanguage; } catch(__e) {}
                          if (!__prefLang) {
-@@ -18401,6 +18403,30 @@
+@@ -18401,6 +18403,32 @@
                          S("audioTracks");
                          S("selectedAudioTrackId");
                      }
 +                    try {
-+                        var __prefEmb = localStorage.getItem("stremio_prefer_embedded_subs") === "true";
-+                        var __subLang = null;
-+                        try { __subLang = JSON.parse(localStorage.getItem("profile")).settings.subtitlesLanguage || null; } catch(__e) {}
++                        var __subLang = null, __prefEmb = false;
++                        try {
++                            var __subProf = JSON.parse(localStorage.getItem("profile")).settings;
++                            __subLang = __subProf.subtitlesLanguage || null;
++                            __prefEmb = !!__subProf.preferEmbeddedSubtitles;
++                        } catch(__e) {}
 +                        if (__prefEmb && __subLang && d.textTracks && d.textTracks.length > 0) {
 +                            var __sMap = { en:"eng", es:"spa", fr:"fra", de:"deu", it:"ita", pt:"por", ru:"rus", nl:"nld", pl:"pol", ja:"jpn", ko:"kor", zh:"zho", hi:"hin", tr:"tur", ar:"ara", sv:"swe", no:"nor", da:"dan", fi:"fin", el:"ell", cs:"ces", hu:"hun", ro:"ron", he:"heb", uk:"ukr", vi:"vie" };
 +                            var __sBToT = { fre:"fra", ger:"deu", dut:"nld", chi:"zho", gre:"ell", cze:"ces" };
@@ -73,11 +71,12 @@
                      S("loaded")
                  }, d.onloadeddata = function() {
                      S("buffering"), S("buffered")
-@@ -20706,9 +20732,11 @@
+@@ -20706,8 +20734,10 @@
                          // Auto-select preferred audio language from Stremio settings
                          var prefLang = null;
                          try { prefLang = JSON.parse(localStorage.getItem("profile")).settings.audioLanguage; } catch(e) {}
-+                        var prefAudioOverDef = localStorage.getItem("stremio_prefer_audio_over_default") === "true";
++                        var prefAudioOverDef = false;
++                        try { prefAudioOverDef = !!JSON.parse(localStorage.getItem("profile")).settings.preferAudioOverDefault; } catch(e) {}
                          var prefIdx = -1;
 -                        if (prefLang) {
 +                        if (prefAudioOverDef && prefLang) {
